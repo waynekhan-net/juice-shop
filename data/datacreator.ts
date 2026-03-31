@@ -38,7 +38,7 @@ import replace from 'replace'
 
 const entities = new Entities()
 
-export default async () => {
+async function createData () {
   const creators = [
     createSecurityQuestions,
     createUsers,
@@ -62,6 +62,8 @@ export default async () => {
     await creator()
   }
 }
+
+export default createData
 
 async function createChallenges () {
   const showHints = config.get<boolean>('challenges.showHints')
