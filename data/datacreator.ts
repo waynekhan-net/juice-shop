@@ -234,21 +234,21 @@ async function deleteProduct (productId: number) {
   })
 }
 
+function makeRandomString (length: number) {
+  let text = ''
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+  for (let i = 0; i < length; i++) { text += possible.charAt(Math.floor(Math.random() * possible.length)) }
+
+  return text
+}
+
+function getGeneratedRandomFakeUserEmail () {
+  const randomDomain = makeRandomString(4).toLowerCase() + '.' + makeRandomString(2).toLowerCase()
+  return makeRandomString(5).toLowerCase() + '@' + randomDomain
+}
+
 async function createRandomFakeUsers () {
-  function getGeneratedRandomFakeUserEmail () {
-    const randomDomain = makeRandomString(4).toLowerCase() + '.' + makeRandomString(2).toLowerCase()
-    return makeRandomString(5).toLowerCase() + '@' + randomDomain
-  }
-
-  function makeRandomString (length: number) {
-    let text = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-
-    for (let i = 0; i < length; i++) { text += possible.charAt(Math.floor(Math.random() * possible.length)) }
-
-    return text
-  }
-
   return await Promise.all(new Array(config.get('application.numberOfRandomFakeUsers')).fill(0).map(
     async () => await UserModel.create({
       email: getGeneratedRandomFakeUserEmail(),
