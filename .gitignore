@@ -63,5 +63,8 @@ config/*.yml
 !config/oss.yml
 !config/defcon33.yml
 
+# SonarQube
+.scannerwork/
+
 # System Files
 .DS_Store
