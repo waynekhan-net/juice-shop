@@ -377,7 +377,9 @@ async function createProducts () {
             logger.error(`Could not insert Product ${product.name}: ${utils.getErrorMessage(err)}`)
           }
         ).then(async (persistedProduct) => {
-          if (persistedProduct != null) {
+          if (persistedProduct == null) {
+            throw new Error('No persisted product found!')
+          } else {
             if (useForChristmasSpecialChallenge) { datacache.products.christmasSpecial = persistedProduct }
             if (urlForProductTamperingChallenge) {
               datacache.products.osaft = persistedProduct
@@ -389,8 +391,6 @@ async function createProducts () {
               })
             }
             if (deletedDate) void deleteProduct(persistedProduct.id) // TODO Rename into "isDeleted" or "deletedFlag" in config for v14.x release
-          } else {
-            throw new Error('No persisted product found!')
           }
           return persistedProduct
         })
