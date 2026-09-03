@@ -41,31 +41,31 @@ describe('MatSearchBarComponent', () => {
   })
 
   it('should focus input on opening the search', fakeAsync(() => {
-    spyOn(component.onOpen, 'emit')
+    spyOn(component.opened, 'emit')
     component.open()
     tick()
     expect(component.searchVisible).toBeTrue()
     expect((component.inputElement.nativeElement.focus as jasmine.Spy)).toHaveBeenCalled()
-    expect(component.onOpen.emit).toHaveBeenCalled()
+    expect(component.opened.emit).toHaveBeenCalled()
   }))
 
   it('should clear value on closing the search', () => {
-    spyOn(component.onClose, 'emit')
+    spyOn(component.closed, 'emit')
     component.value = 'test'
     component.searchVisible = true
     component.close()
     expect(component.searchVisible).toBeFalse()
     expect(component.value).toBe('')
-    expect(component.onClose.emit).toHaveBeenCalled()
+    expect(component.closed.emit).toHaveBeenCalled()
   })
 
   it('should not close the search when set to be always open', () => {
-    spyOn(component.onClose, 'emit')
+    spyOn(component.closed, 'emit')
     component.alwaysOpen = true
     component.searchVisible = true
     component.close()
     expect(component.searchVisible).toBeTrue()
-    expect(component.onClose.emit).toHaveBeenCalled()
+    expect(component.closed.emit).toHaveBeenCalled()
   })
 
   it('should open search by default when set to be always open', () => {
@@ -76,31 +76,31 @@ describe('MatSearchBarComponent', () => {
   })
 
   it('should hide search on blur when value is empty', () => {
-    spyOn(component.onBlur, 'emit')
+    spyOn(component.blur, 'emit')
     component.searchVisible = true
     component.onBlurring('')
-    expect(component.onBlur.emit).toHaveBeenCalledWith('')
+    expect(component.blur.emit).toHaveBeenCalledWith('')
     expect(component.searchVisible).toBeFalse()
   })
 
   it('should keep search visible on blur if set to be always open', () => {
-    spyOn(component.onBlur, 'emit')
+    spyOn(component.blur, 'emit')
     component.alwaysOpen = true
     component.searchVisible = true
     component.onBlurring('')
-    expect(component.onBlur.emit).toHaveBeenCalledWith('')
+    expect(component.blur.emit).toHaveBeenCalledWith('')
     expect(component.searchVisible).toBeTrue()
   })
 
   it('should emit provided value when enterring', () => {
-    spyOn(component.onEnter, 'emit')
+    spyOn(component.enter, 'emit')
     component.onEnterring('query')
-    expect(component.onEnter.emit).toHaveBeenCalledWith('query')
+    expect(component.enter.emit).toHaveBeenCalledWith('query')
   })
 
   it('should emit provided value when focussing', () => {
-    spyOn(component.onFocus, 'emit')
+    spyOn(component.focus, 'emit')
     component.onFocussing('query')
-    expect(component.onFocus.emit).toHaveBeenCalledWith('query')
+    expect(component.focus.emit).toHaveBeenCalledWith('query')
   })
 })
