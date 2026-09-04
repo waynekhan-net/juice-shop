@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import colors from 'colors/safe'
-import { diffLines, structuredPatch } from 'diff'
+import { type Change, diffLines, structuredPatch } from 'diff'
 
 import { retrieveCodeSnippet } from '../routes/vulnCodeSnippet'
 
@@ -32,6 +32,57 @@ function filterString (text: string) {
   return text
 }
 
+function collectAddedLines (diff: Change[], snippet: { vulnLines: number[], neutralLines: number[] }, added: number[]) {
+  let line = 0
+  for (const part of diff) {
+    if (!part.count) continue
+    if (part.removed) continue
+    const prev = line
+    line += part.count
+    if (!(part.added)) continue
+    for (let i = 0; i < part.count; i++) {
+      if (!snippet.vulnLines.includes(prev + i + 1) && !snippet.neutralLines.includes(prev + i + 1)) {
+        process.stdout.write(colors.red(colors.inverse(prev + i + 1 + '')))
+        process.stdout.write(' ')
+        added.push(prev + i + 1)
+      } else if (snippet.vulnLines.includes(prev + i + 1)) {
+        process.stdout.write(colors.red(colors.bold(prev + i + 1 + ' ')))
+      } else if (snippet.neutralLines.includes(prev + i + 1)) {
+        process.stdout.write(colors.red(prev + i + 1 + ' '))
+      }
+    }
+  }
+}
+
+function collectRemovedLines (diff: Change[], snippet: { vulnLines: number[], neutralLines: number[] }, removed: number[]) {
+  let line = 0
+  let norm = 0
+  for (const part of diff) {
+    if (!part.count) continue
+    if (part.added) {
+      norm--
+      continue
+    }
+    const prev = line
+    line += part.count
+    if (!(part.removed)) continue
+    let temp = norm
+    for (let i = 0; i < part.count; i++) {
+      if (!snippet.vulnLines.includes(prev + i + 1 - norm) && !snippet.neutralLines.includes(prev + i + 1 - norm)) {
+        process.stdout.write(colors.green(colors.inverse((prev + i + 1 - norm + ''))))
+        process.stdout.write(' ')
+        removed.push(prev + i + 1 - norm)
+      } else if (snippet.vulnLines.includes(prev + i + 1 - norm)) {
+        process.stdout.write(colors.green(colors.bold(prev + i + 1 - norm + ' ')))
+      } else if (snippet.neutralLines.includes(prev + i + 1 - norm)) {
+        process.stdout.write(colors.green(prev + i + 1 - norm + ' '))
+      }
+      temp++
+    }
+    norm = temp
+  }
+}
+
 const checkDiffs = async (keys: string[]) => {
   const data: CacheData = keys.reduce((prev, curr) => {
     return {
@@ -49,51 +100,8 @@ const checkDiffs = async (keys: string[]) => {
         process.stdout.write(val + ': ')
         const fileData = fs.readFileSync(fixesPath + '/' + val).toString()
         const diff = diffLines(filterString(fileData), filterString(snippet.snippet))
-        let line = 0
-        for (const part of diff) {
-          if (!part.count) continue
-          if (part.removed) continue
-          const prev = line
-          line += part.count
-          if (!(part.added)) continue
-          for (let i = 0; i < part.count; i++) {
-            if (!snippet.vulnLines.includes(prev + i + 1) && !snippet.neutralLines.includes(prev + i + 1)) {
-              process.stdout.write(colors.red(colors.inverse(prev + i + 1 + '')))
-              process.stdout.write(' ')
-              data[val].added.push(prev + i + 1)
-            } else if (snippet.vulnLines.includes(prev + i + 1)) {
-              process.stdout.write(colors.red(colors.bold(prev + i + 1 + ' ')))
-            } else if (snippet.neutralLines.includes(prev + i + 1)) {
-              process.stdout.write(colors.red(prev + i + 1 + ' '))
-            }
-          }
-        }
-        line = 0
-        let norm = 0
-        for (const part of diff) {
-          if (!part.count) continue
-          if (part.added) {
-            norm--
-            continue
-          }
-          const prev = line
-          line += part.count
-          if (!(part.removed)) continue
-          let temp = norm
-          for (let i = 0; i < part.count; i++) {
-            if (!snippet.vulnLines.includes(prev + i + 1 - norm) && !snippet.neutralLines.includes(prev + i + 1 - norm)) {
-              process.stdout.write(colors.green(colors.inverse((prev + i + 1 - norm + ''))))
-              process.stdout.write(' ')
-              data[val].removed.push(prev + i + 1 - norm)
-            } else if (snippet.vulnLines.includes(prev + i + 1 - norm)) {
-              process.stdout.write(colors.green(colors.bold(prev + i + 1 - norm + ' ')))
-            } else if (snippet.neutralLines.includes(prev + i + 1 - norm)) {
-              process.stdout.write(colors.green(prev + i + 1 - norm + ' '))
-            }
-            temp++
-          }
-          norm = temp
-        }
+        collectAddedLines(diff, snippet, data[val].added)
+        collectRemovedLines(diff, snippet, data[val].removed)
         process.stdout.write('\n')
       })
       .catch(err => {

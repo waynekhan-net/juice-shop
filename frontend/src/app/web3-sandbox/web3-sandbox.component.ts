@@ -228,31 +228,25 @@ contract HelloWorld {
         (func.stateMutability === 'view' || func.stateMutability === 'pure')
       ) {
         console.log('hello')
-        const outputValue = transaction[0].toString()
-        const updatedFunc = this.contractFunctions.find(
-          (f) => f.name === func.name
-        )
-        if (updatedFunc) {
-          updatedFunc.outputValue = outputValue
-          const index = this.contractFunctions.indexOf(func)
-          if (index !== -1) {
-            this.contractFunctions[index] = updatedFunc
-          }
-        }
+        this.updateContractFunctionOutput(func, transaction[0].toString())
         console.log(func.outputValue)
       }
       console.log('Invoked:', transaction)
     } catch (error) {
       console.error('Error invoking function', error)
-      const updatedFunc = this.contractFunctions.find(
-        (f) => f.name === func.name
-      )
-      if (updatedFunc) {
-        updatedFunc.outputValue = error.message
-        const index = this.contractFunctions.indexOf(func)
-        if (index !== -1) {
-          this.contractFunctions[index] = updatedFunc
-        }
+      this.updateContractFunctionOutput(func, error.message)
+    }
+  }
+
+  private updateContractFunctionOutput (func, outputValue: string) {
+    const updatedFunc = this.contractFunctions.find(
+      (f) => f.name === func.name
+    )
+    if (updatedFunc) {
+      updatedFunc.outputValue = outputValue
+      const index = this.contractFunctions.indexOf(func)
+      if (index !== -1) {
+        this.contractFunctions[index] = updatedFunc
       }
     }
   }
