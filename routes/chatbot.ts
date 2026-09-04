@@ -56,6 +56,40 @@ export async function initializeChatbot () {
 
 void initializeChatbot()
 
+async function handleChatResponse (bot: Bot, query: string, userId: string, user: User, res: Response) {
+  try {
+    const response = await bot.respond(query, userId)
+    if (response.action === 'function') {
+      // @ts-expect-error FIXME unclean usage of any type as index
+      if (response.handler && botUtils[response.handler]) {
+        // @ts-expect-error FIXME unclean usage of any type as index
+        res.status(200).json(await botUtils[response.handler](query, user))
+      } else {
+        res.status(200).json({
+          action: 'response',
+          body: config.get('application.chatBot.defaultResponse')
+        })
+      }
+    } else {
+      res.status(200).json(response)
+    }
+  } catch {
+    try {
+      await bot.respond(testCommand, userId)
+      res.status(200).json({
+        action: 'response',
+        body: config.get('application.chatBot.defaultResponse')
+      })
+    } catch (err) {
+      challengeUtils.solveIf(challenges.killChatbotChallenge, () => { return true })
+      res.status(200).json({
+        action: 'response',
+        body: `Remember to stay hydrated while I try to recover from "${utils.getErrorMessage(err)}"...`
+      })
+    }
+  }
+}
+
 async function processQuery (user: User, req: Request, res: Response, next: NextFunction) {
   if (bot == null) {
     res.status(503).send()
@@ -100,37 +134,7 @@ async function processQuery (user: User, req: Request, res: Response, next: Next
     return
   }
 
-  try {
-    const response = await bot.respond(req.body.query, `${user.id}`)
-    if (response.action === 'function') {
-      // @ts-expect-error FIXME unclean usage of any type as index
-      if (response.handler && botUtils[response.handler]) {
-        // @ts-expect-error FIXME unclean usage of any type as index
-        res.status(200).json(await botUtils[response.handler](req.body.query, user))
-      } else {
-        res.status(200).json({
-          action: 'response',
-          body: config.get('application.chatBot.defaultResponse')
-        })
-      }
-    } else {
-      res.status(200).json(response)
-    }
-  } catch (err) {
-    try {
-      await bot.respond(testCommand, `${user.id}`)
-      res.status(200).json({
-        action: 'response',
-        body: config.get('application.chatBot.defaultResponse')
-      })
-    } catch (err) {
-      challengeUtils.solveIf(challenges.killChatbotChallenge, () => { return true })
-      res.status(200).json({
-        action: 'response',
-        body: `Remember to stay hydrated while I try to recover from "${utils.getErrorMessage(err)}"...`
-      })
-    }
-  }
+  await handleChatResponse(bot, req.body.query, `${user.id}`, user, res)
 }
 
 async function setUserName (user: User, req: Request, res: Response) {
